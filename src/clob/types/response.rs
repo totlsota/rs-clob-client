@@ -4,9 +4,11 @@
 )]
 
 use std::collections::HashMap;
+use std::fmt;
 
 use bon::Builder;
 use chrono::{DateTime, NaiveDate, Utc};
+use serde::de::{self, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_with::{DefaultOnNull, TimestampMilliSeconds, TimestampSeconds, TryFromInto, serde_as};
 use sha2::{Digest as _, Sha256};
@@ -666,4 +668,175 @@ pub struct Page<T> {
     pub limit: u64,
     /// The length of `data`
     pub count: u64,
+}
+
+// =============================================================================
+// RFQ Response Types (feature-gated)
+// =============================================================================
+
+/// Response from creating an RFQ request.
+#[cfg(feature = "rfq")]
+#[non_exhaustive]
+#[derive(Debug, Clone, Deserialize, Builder, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[builder(on(String, into))]
+pub struct CreateRfqRequestResponse {
+    /// Unique identifier for the created request.
+    pub request_id: String,
+    /// Unix timestamp when the request expires.
+    pub expiry: i64,
+}
+
+/// Response from creating an RFQ quote.
+#[cfg(feature = "rfq")]
+#[non_exhaustive]
+#[derive(Debug, Clone, Deserialize, Builder, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[builder(on(String, into))]
+pub struct CreateRfqQuoteResponse {
+    /// Unique identifier for the created quote.
+    pub quote_id: String,
+}
+
+/// Response from accepting an RFQ quote.
+///
+/// Returns "OK" as text, represented as unit type for deserialization.
+#[cfg(feature = "rfq")]
+#[non_exhaustive]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AcceptRfqQuoteResponse;
+
+/// Response from approving an RFQ order.
+#[cfg(feature = "rfq")]
+#[non_exhaustive]
+#[derive(Debug, Clone, Deserialize, Builder, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[builder(on(String, into))]
+pub struct ApproveRfqOrderResponse {
+    /// Trade IDs for the executed order.
+    pub trade_ids: Vec<String>,
+}
+
+/// An RFQ request in the system.
+#[cfg(feature = "rfq")]
+#[non_exhaustive]
+#[derive(Debug, Clone, Deserialize, Builder, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[builder(on(String, into))]
+pub struct RfqRequest {
+    /// Unique request identifier.
+    pub request_id: String,
+    /// User's address.
+    pub user: Address,
+    /// Proxy address (may be same as user).
+    pub proxy: Address,
+    /// Market condition ID.
+    pub market: String,
+    /// Token ID for the outcome token.
+    pub token: String,
+    /// Complement token ID.
+    pub complement: String,
+    /// Order side (BUY or SELL).
+    pub side: Side,
+    /// Size of tokens to receive.
+    pub size_in: Decimal,
+    /// Size of tokens to give.
+    pub size_out: Decimal,
+    /// Price for the request.
+    pub price: Decimal,
+    /// Unix timestamp when the request expires.
+    pub expiry: i64,
+}
+
+/// An RFQ quote in the system.
+#[cfg(feature = "rfq")]
+#[non_exhaustive]
+#[derive(Debug, Clone, Deserialize, Builder, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[builder(on(String, into))]
+pub struct RfqQuote {
+    /// Unique quote identifier.
+    pub quote_id: String,
+    /// Request ID this quote is for.
+    pub request_id: String,
+    /// Quoter's address.
+    pub user: Address,
+    /// Proxy address (may be same as user).
+    pub proxy: Address,
+    /// Market condition ID.
+    pub market: String,
+    /// Token ID for the outcome token.
+    pub token: String,
+    /// Complement token ID.
+    pub complement: String,
+    /// Order side (BUY or SELL).
+    pub side: Side,
+    /// Size of tokens to receive.
+    pub size_in: Decimal,
+    /// Size of tokens to give.
+    pub size_out: Decimal,
+    /// Quoted price.
+    pub price: Decimal,
+}
+
+/// Paginated response wrapper for RFQ queries.
+#[cfg(feature = "rfq")]
+#[non_exhaustive]
+#[derive(Debug, Clone, Deserialize, Builder, PartialEq)]
+#[builder(on(String, into))]
+pub struct RfqPage<T> {
+    /// List of items in this page.
+    pub data: Vec<T>,
+    /// Cursor for the next page (base64 encoded).
+    pub next_cursor: String,
+    /// Maximum items per page.
+    pub limit: u64,
+    /// Number of items in this page.
+    pub count: u64,
+}
+
+#[cfg(feature = "rfq")]
+fn string_from_number_or_string<'de, D>(deserializer: D) -> std::result::Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct StringOrNumberVisitor;
+
+    impl Visitor<'_> for StringOrNumberVisitor {
+        type Value = String;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("string or integer")
+        }
+
+        fn visit_str<E>(self, v: &str) -> std::result::Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(v.to_owned())
+        }
+
+        fn visit_string<E>(self, v: String) -> std::result::Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(v)
+        }
+
+        fn visit_i64<E>(self, v: i64) -> std::result::Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(v.to_string())
+        }
+
+        fn visit_u64<E>(self, v: u64) -> std::result::Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(v.to_string())
+        }
+    }
+
+    deserializer.deserialize_any(StringOrNumberVisitor)
 }
