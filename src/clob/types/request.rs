@@ -6,14 +6,14 @@
 use bon::Builder;
 use chrono::NaiveDate;
 use serde::Serialize;
-use serde_with::{StringWithSeparator, formats::CommaSeparator, serde_as};
+use serde_with::{StringWithSeparator, formats::CommaSeparator, serde_as, skip_serializing_none};
 
 #[cfg(feature = "rfq")]
 use crate::auth::ApiKey;
 use crate::clob::types::{AssetType, Side, SignatureType, TimeRange};
 #[cfg(feature = "rfq")]
 use crate::clob::types::{RfqSortBy, RfqSortDir, RfqState};
-use crate::types::Address;
+use crate::types::{Address, Decimal};
 
 #[non_exhaustive]
 #[derive(Debug, Serialize, Builder)]
@@ -31,20 +31,20 @@ pub struct PriceRequest {
 }
 
 #[non_exhaustive]
+#[skip_serializing_none]
 #[derive(Debug, Serialize, Builder)]
 #[builder(on(String, into))]
 pub struct SpreadRequest {
     pub token_id: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub side: Option<Side>,
 }
 
 #[non_exhaustive]
+#[skip_serializing_none]
 #[derive(Debug, Serialize, Builder)]
 #[builder(on(String, into))]
 pub struct OrderBookSummaryRequest {
     pub token_id: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub side: Option<Side>,
 }
 
@@ -56,6 +56,7 @@ pub struct LastTradePriceRequest {
 }
 
 #[non_exhaustive]
+#[skip_serializing_none]
 #[derive(Debug, Serialize, Builder)]
 #[builder(on(String, into))]
 pub struct PriceHistoryRequest {
@@ -67,7 +68,6 @@ pub struct PriceHistoryRequest {
     #[builder(into)]
     pub time_range: TimeRange,
     /// Optional fidelity (number of data points).
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub fidelity: Option<u32>,
 }
 
@@ -138,10 +138,6 @@ pub struct UserRewardsEarningRequest {
     pub no_competition: bool,
 }
 
-// =============================================================================
-// RFQ Request Types (feature-gated)
-// =============================================================================
-
 /// Request body for creating an RFQ request.
 ///
 /// Creates an RFQ Request to buy or sell outcome tokens.
@@ -177,18 +173,16 @@ pub struct CancelRfqRequestRequest {
 /// Query parameters for getting RFQ requests.
 #[cfg(feature = "rfq")]
 #[non_exhaustive]
+#[skip_serializing_none]
 #[derive(Debug, Clone, Default, Serialize, Builder)]
 #[serde(rename_all = "camelCase")]
 #[builder(on(String, into))]
 pub struct GetRfqRequestsRequest {
     /// Cursor offset for pagination (base64 encoded).
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub offset: Option<String>,
     /// Max requests to return. Defaults to 50, max 1000.
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<u32>,
     /// Filter by state (active or inactive).
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub state: Option<RfqState>,
     /// Filter by request IDs.
     #[serde(rename = "requestIds", skip_serializing_if = "Vec::is_empty")]
@@ -199,28 +193,20 @@ pub struct GetRfqRequestsRequest {
     #[builder(default)]
     pub markets: Vec<String>,
     /// Minimum size in tokens.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub size_min: Option<f64>,
+    pub size_min: Option<Decimal>,
     /// Maximum size in tokens.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub size_max: Option<f64>,
+    pub size_max: Option<Decimal>,
     /// Minimum size in USDC.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub size_usdc_min: Option<f64>,
+    pub size_usdc_min: Option<Decimal>,
     /// Maximum size in USDC.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub size_usdc_max: Option<f64>,
+    pub size_usdc_max: Option<Decimal>,
     /// Minimum price.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub price_min: Option<f64>,
+    pub price_min: Option<Decimal>,
     /// Maximum price.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub price_max: Option<f64>,
+    pub price_max: Option<Decimal>,
     /// Sort field.
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub sort_by: Option<RfqSortBy>,
     /// Sort direction.
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub sort_dir: Option<RfqSortDir>,
 }
 
@@ -259,18 +245,16 @@ pub struct CancelRfqQuoteRequest {
 /// Query parameters for getting RFQ quotes.
 #[cfg(feature = "rfq")]
 #[non_exhaustive]
+#[skip_serializing_none]
 #[derive(Debug, Clone, Default, Serialize, Builder)]
 #[serde(rename_all = "camelCase")]
 #[builder(on(String, into))]
 pub struct GetRfqQuotesRequest {
     /// Cursor offset for pagination (base64 encoded).
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub offset: Option<String>,
     /// Max quotes to return. Defaults to 50, max 1000.
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<u32>,
     /// Filter by state (active or inactive).
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub state: Option<RfqState>,
     /// Filter by quote IDs.
     #[serde(rename = "quoteIds", skip_serializing_if = "Vec::is_empty")]
@@ -285,28 +269,20 @@ pub struct GetRfqQuotesRequest {
     #[builder(default)]
     pub markets: Vec<String>,
     /// Minimum size in tokens.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub size_min: Option<f64>,
+    pub size_min: Option<Decimal>,
     /// Maximum size in tokens.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub size_max: Option<f64>,
+    pub size_max: Option<Decimal>,
     /// Minimum size in USDC.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub size_usdc_min: Option<f64>,
+    pub size_usdc_min: Option<Decimal>,
     /// Maximum size in USDC.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub size_usdc_max: Option<f64>,
+    pub size_usdc_max: Option<Decimal>,
     /// Minimum price.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub price_min: Option<f64>,
+    pub price_min: Option<Decimal>,
     /// Maximum price.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub price_max: Option<f64>,
+    pub price_max: Option<Decimal>,
     /// Sort field.
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub sort_by: Option<RfqSortBy>,
     /// Sort direction.
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub sort_dir: Option<RfqSortDir>,
 }
 
@@ -324,9 +300,9 @@ pub struct AcceptRfqQuoteRequest {
     /// ID of the Quote being accepted.
     pub quote_id: String,
     /// Maker's amount in base units.
-    pub maker_amount: String,
+    pub maker_amount: Decimal,
     /// Taker's amount in base units.
-    pub taker_amount: String,
+    pub taker_amount: Decimal,
     /// Outcome token ID.
     pub token_id: String,
     /// Maker's address.
@@ -365,9 +341,9 @@ pub struct ApproveRfqOrderRequest {
     /// ID of the Quote being approved.
     pub quote_id: String,
     /// Maker's amount in base units.
-    pub maker_amount: String,
+    pub maker_amount: Decimal,
     /// Taker's amount in base units.
-    pub taker_amount: String,
+    pub taker_amount: Decimal,
     /// Outcome token ID.
     pub token_id: String,
     /// Maker's address.

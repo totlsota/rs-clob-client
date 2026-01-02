@@ -1451,16 +1451,8 @@ impl Client<Authenticated<Builder>> {
     }
 }
 
-// =============================================================================
-// RFQ Methods (feature-gated)
-// =============================================================================
-
 #[cfg(feature = "rfq")]
 impl<K: Kind> Client<Authenticated<K>> {
-    // =========================================================================
-    // RFQ Request Endpoints
-    // =========================================================================
-
     /// Creates an RFQ Request to buy or sell outcome tokens.
     ///
     /// This initiates the RFQ flow where market makers can provide quotes.
@@ -1514,7 +1506,7 @@ impl<K: Kind> Client<Authenticated<K>> {
     pub async fn get_requests(
         &self,
         request: &crate::clob::types::GetRfqRequestsRequest,
-    ) -> Result<crate::clob::types::RfqPage<crate::clob::types::RfqRequest>> {
+    ) -> Result<crate::clob::types::response::Page<crate::clob::types::RfqRequest>> {
         let params = request.query_params(None);
         let http_request = self
             .client()
@@ -1534,7 +1526,7 @@ impl<K: Kind> Client<Authenticated<K>> {
         &self,
         request: &crate::clob::types::GetRfqRequestsRequest,
         next_cursor: &str,
-    ) -> Result<crate::clob::types::RfqPage<crate::clob::types::RfqRequest>> {
+    ) -> Result<crate::clob::types::response::Page<crate::clob::types::RfqRequest>> {
         let params = request.query_params(Some(next_cursor));
         let http_request = self
             .client()
@@ -1544,10 +1536,6 @@ impl<K: Kind> Client<Authenticated<K>> {
 
         crate::request(&self.inner.client, http_request, Some(headers)).await
     }
-
-    // =========================================================================
-    // RFQ Quote Endpoints
-    // =========================================================================
 
     /// Creates an RFQ Quote in response to a Request.
     ///
@@ -1598,7 +1586,7 @@ impl<K: Kind> Client<Authenticated<K>> {
     pub async fn get_quotes(
         &self,
         request: &crate::clob::types::GetRfqQuotesRequest,
-    ) -> Result<crate::clob::types::RfqPage<crate::clob::types::RfqQuote>> {
+    ) -> Result<crate::clob::types::response::Page<crate::clob::types::RfqQuote>> {
         let params = request.query_params(None);
         let http_request = self
             .client()
@@ -1618,7 +1606,7 @@ impl<K: Kind> Client<Authenticated<K>> {
         &self,
         request: &crate::clob::types::GetRfqQuotesRequest,
         next_cursor: &str,
-    ) -> Result<crate::clob::types::RfqPage<crate::clob::types::RfqQuote>> {
+    ) -> Result<crate::clob::types::response::Page<crate::clob::types::RfqQuote>> {
         let params = request.query_params(Some(next_cursor));
         let http_request = self
             .client()
@@ -1628,10 +1616,6 @@ impl<K: Kind> Client<Authenticated<K>> {
 
         crate::request(&self.inner.client, http_request, Some(headers)).await
     }
-
-    // =========================================================================
-    // RFQ Execution Endpoints
-    // =========================================================================
 
     /// Requester accepts an RFQ Quote.
     ///
