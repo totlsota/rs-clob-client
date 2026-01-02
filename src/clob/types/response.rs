@@ -4,11 +4,9 @@
 )]
 
 use std::collections::HashMap;
-use std::fmt;
 
 use bon::Builder;
 use chrono::{DateTime, NaiveDate, Utc};
-use serde::de::{self, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_with::{DefaultOnNull, TimestampMilliSeconds, TimestampSeconds, TryFromInto, serde_as};
 use sha2::{Digest as _, Sha256};
@@ -773,49 +771,4 @@ pub struct RfqQuote {
     pub size_out: Decimal,
     /// Quoted price.
     pub price: Decimal,
-}
-
-fn string_from_number_or_string<'de, D>(deserializer: D) -> std::result::Result<String, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    struct StringOrNumberVisitor;
-
-    impl Visitor<'_> for StringOrNumberVisitor {
-        type Value = String;
-
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            formatter.write_str("string or integer")
-        }
-
-        fn visit_str<E>(self, v: &str) -> std::result::Result<Self::Value, E>
-        where
-            E: de::Error,
-        {
-            Ok(v.to_owned())
-        }
-
-        fn visit_string<E>(self, v: String) -> std::result::Result<Self::Value, E>
-        where
-            E: de::Error,
-        {
-            Ok(v)
-        }
-
-        fn visit_i64<E>(self, v: i64) -> std::result::Result<Self::Value, E>
-        where
-            E: de::Error,
-        {
-            Ok(v.to_string())
-        }
-
-        fn visit_u64<E>(self, v: u64) -> std::result::Result<Self::Value, E>
-        where
-            E: de::Error,
-        {
-            Ok(v.to_string())
-        }
-    }
-
-    deserializer.deserialize_any(StringOrNumberVisitor)
 }
