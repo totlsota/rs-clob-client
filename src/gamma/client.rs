@@ -112,8 +112,8 @@ impl Client {
         let client = ReqwestClient::builder().default_headers(headers).build()?;
 
         #[cfg(feature = "rate-limiting")]
-        let rate_limiters = global_rate_limit.map_or(
-            rate_limit::RateLimiters::new(),
+        let rate_limiters = global_rate_limit.map_or_else(
+            rate_limit::RateLimiters::new,
             rate_limit::RateLimiters::with_global,
         );
 

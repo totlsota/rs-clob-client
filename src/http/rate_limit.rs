@@ -193,6 +193,7 @@ mod implementation {
         /// # Errors
         ///
         /// Currently, always returns Ok after waiting. Future versions may support fail-fast.
+        // TODO: combine the async/awaits, check that they work for burst
         pub async fn check_spec(&self, spec: &Spec) -> crate::Result<()> {
             match &spec.quota {
                 Quota::Single(quota) => {
@@ -342,7 +343,7 @@ pub use implementation::*;
 /// ```
 #[macro_export]
 macro_rules! check {
-    // API-only rate limiting (no endpoint-specific limit, just API-level)
+    // API-only rate limiting
     ($self:expr, api_only: $api:expr, quota: $quota:expr) => {{
         #[cfg(feature = "rate-limiting")]
         if let Some(ref limiters) = $self.rate_limiters {
@@ -352,7 +353,7 @@ macro_rules! check {
         }
     }};
 
-    // Single quota with optional API and global quotas
+    // Single quota with optional API quota
     ($self:expr, key: $key:expr, quota: $quota:expr $(, api_quota: $api_quota:expr)? ) => {{
         #[cfg(feature = "rate-limiting")]
         if let Some(ref limiters) = $self.rate_limiters {
