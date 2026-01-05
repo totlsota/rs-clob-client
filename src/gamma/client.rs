@@ -77,7 +77,7 @@ pub struct Client {
     host: Url,
     client: ReqwestClient,
     #[cfg(feature = "rate-limiting")]
-    rate_limiters: Option<Arc<rate_limit::RateLimiters>>,
+    rate_limiters: Arc<rate_limit::RateLimiters>,
 }
 
 impl Default for Client {
@@ -121,7 +121,7 @@ impl Client {
             host: Url::parse(host)?,
             client,
             #[cfg(feature = "rate-limiting")]
-            rate_limiters: Some(Arc::new(rate_limiters)),
+            rate_limiters: Arc::new(rate_limiters),
         })
     }
 

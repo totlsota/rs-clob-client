@@ -304,7 +304,7 @@ struct ClientInner<S: State> {
     salt_generator: fn() -> u64,
     /// Rate limiters for throttling requests
     #[cfg(feature = "rate-limiting")]
-    rate_limiters: Option<Arc<rate_limit::RateLimiters>>,
+    rate_limiters: Arc<rate_limit::RateLimiters>,
 }
 
 impl<S: State> ClientInner<S> {
@@ -879,7 +879,7 @@ impl Client<Unauthenticated> {
                 signature_type: SignatureType::Eoa,
                 salt_generator: generate_seed,
                 #[cfg(feature = "rate-limiting")]
-                rate_limiters: Some(Arc::new(rate_limiters)),
+                rate_limiters: Arc::new(rate_limiters),
             }),
         })
     }

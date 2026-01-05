@@ -276,7 +276,8 @@ macro_rules! check {
     // API-only rate limiting
     ($self:expr, api_only: $api:expr, quota: $quota:expr) => {{
         #[cfg(feature = "rate-limiting")]
-        if let Some(ref limiters) = $self.rate_limiters {
+        {
+            let limiters = &$self.rate_limiters;
             let (count, period) = $crate::rate_limit::parse_quota_literal($quota);
             let api_quota = $crate::rate_limit::parse_quota(count, period);
             limiters.check_api_limit($api, api_quota).await?;
@@ -286,7 +287,8 @@ macro_rules! check {
     // Single quota with optional API quota
     ($self:expr, key: $key:expr, quota: $quota:expr $(, api_quota: $api_quota:expr)? ) => {{
         #[cfg(feature = "rate-limiting")]
-        if let Some(ref limiters) = $self.rate_limiters {
+        {
+            let limiters = &$self.rate_limiters;
             let (count, period) = $crate::rate_limit::parse_quota_literal($quota);
             let quota = $crate::rate_limit::parse_quota(count, period);
 
@@ -311,7 +313,8 @@ macro_rules! check {
     // Multi-window quota (burst + sustained)
     ($self:expr, key: $key:expr, burst: $burst:expr, sustained: $sustained:expr $(, api_quota: $api_quota:expr)? ) => {{
         #[cfg(feature = "rate-limiting")]
-        if let Some(ref limiters) = $self.rate_limiters {
+        {
+            let limiters = &$self.rate_limiters;
             let (burst_count, burst_period) = $crate::rate_limit::parse_quota_literal($burst);
             let burst_quota = $crate::rate_limit::parse_quota(burst_count, burst_period);
 
@@ -406,13 +409,13 @@ mod tests {
     #[tokio::test]
     async fn api_only_works() -> crate::Result<()> {
         struct MockClient {
-            rate_limiters: Option<Arc<RateLimiters>>,
+            rate_limiters: Arc<RateLimiters>,
         }
 
         let limiters = RateLimiters::new();
 
         let client = MockClient {
-            rate_limiters: Some(Arc::new(limiters)),
+            rate_limiters: Arc::new(limiters),
         };
 
         // This should not panic or error
@@ -422,11 +425,10 @@ mod tests {
         check!(client, api_only: "gamma", quota: "4000/10s");
 
         // Test direct method call
-        if let Some(limiters) = &client.rate_limiters {
-            limiters
-                .check_api_limit("data", parse_quota(1000, "10s"))
-                .await?;
-        }
+        client
+            .rate_limiters
+            .check_api_limit("data", parse_quota(1000, "10s"))
+            .await?;
 
         Ok(())
     }
