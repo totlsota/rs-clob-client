@@ -122,8 +122,6 @@ impl Client {
             client,
             #[cfg(feature = "rate-limiting")]
             rate_limiters: Some(Arc::new(rate_limiters)),
-            #[cfg(not(feature = "rate-limiting"))]
-            rate_limiters: None,
         })
     }
 

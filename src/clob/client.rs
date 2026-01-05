@@ -878,8 +878,6 @@ impl Client<Unauthenticated> {
                 salt_generator: generate_seed,
                 #[cfg(feature = "rate-limiting")]
                 rate_limiters: Some(Arc::new(rate_limiters)),
-                #[cfg(not(feature = "rate-limiting"))]
-                rate_limiters: None,
             }),
         })
     }
