@@ -44,7 +44,7 @@ use super::types::response::{
     MetaHolder, OpenInterest, Position, Trade, Traded, TraderLeaderboardEntry, Value,
 };
 #[cfg(feature = "rate-limiting")]
-use crate::http::rate_limit;
+use crate::rate_limit;
 use crate::{Result, ToQueryParams as _};
 
 /// HTTP client for the Polymarket Data API.

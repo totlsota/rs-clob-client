@@ -48,7 +48,7 @@ use super::types::response::{
 };
 use crate::error::Error;
 #[cfg(feature = "rate-limiting")]
-use crate::http::rate_limit;
+use crate::rate_limit;
 use crate::{Result, ToQueryParams as _};
 
 /// HTTP client for the Polymarket Gamma API.

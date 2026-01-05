@@ -42,8 +42,7 @@ use crate::clob::types::response::{
 use crate::clob::types::{SignableOrder, SignatureType, SignedOrder, TickSize};
 use crate::error::{Error, Synchronization};
 #[cfg(feature = "rate-limiting")]
-use crate::http::rate_limit;
-use crate::http::rate_limit::Limiter;
+use crate::rate_limit;
 use crate::types::Address;
 use crate::{AMOY, POLYGON, Result, Timestamp, ToQueryParams as _, auth, contract_config};
 
@@ -272,7 +271,7 @@ pub struct Config {
     /// Polymarket's 15k/10s global limit. Endpoint-specific limits are declared via `#[rate_limit]`.
     /// Defaults to `None` (no global limit).
     #[cfg(feature = "rate-limiting")]
-    pub global_rate_limit: Option<Limiter>,
+    pub global_rate_limit: Option<rate_limit::Limiter>,
 }
 
 /// The default geoblock API host (separate from CLOB host)
