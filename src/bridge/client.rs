@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use reqwest::{
     Client as ReqwestClient, Method,
     header::{HeaderMap, HeaderValue},
@@ -8,8 +6,6 @@ use url::Url;
 
 use super::types::{DepositRequest, DepositResponse, SupportedAssetsResponse};
 use crate::Result;
-#[cfg(feature = "rate-limiting")]
-use crate::http::rate_limit;
 
 /// Client for the Polymarket Bridge API.
 ///
@@ -36,18 +32,15 @@ use crate::http::rate_limit;
 /// # Ok(())
 /// # }
 /// ```
-#[expect(clippy::struct_field_names, reason = "client included for clarity")]
 #[derive(Clone, Debug)]
 pub struct Client {
     host: Url,
     client: ReqwestClient,
-    #[cfg(feature = "rate-limiting")]
-    rate_limiters: Option<Arc<rate_limit::RateLimiters>>,
 }
 
 impl Default for Client {
     fn default() -> Self {
-        Client::new("https://bridge.polymarket.com", None)
+        Client::new("https://bridge.polymarket.com")
             .expect("Client with default endpoint should succeed")
     }
 }
@@ -63,11 +56,7 @@ impl Client {
     /// # Errors
     ///
     /// Returns an error if the host URL is invalid or the HTTP client fails to build.
-    pub fn new(
-        host: &str,
-        #[cfg(feature = "rate-limiting")] global_rate_limit: Option<governor::Quota>,
-        #[cfg(not(feature = "rate-limiting"))] _rate_limit_config: Option<()>,
-    ) -> Result<Client> {
+    pub fn new(host: &str) -> Result<Client> {
         let mut headers = HeaderMap::new();
 
         headers.insert("User-Agent", HeaderValue::from_static("rs_clob_client"));
@@ -76,15 +65,9 @@ impl Client {
         headers.insert("Content-Type", HeaderValue::from_static("application/json"));
         let client = ReqwestClient::builder().default_headers(headers).build()?;
 
-        #[cfg(feature = "rate-limiting")]
-        let rate_limiters =
-            global_rate_limit.map(|quota| Arc::new(rate_limit::RateLimiters::with_global(quota)));
-
         Ok(Self {
             host: Url::parse(host)?,
             client,
-            #[cfg(feature = "rate-limiting")]
-            rate_limiters,
         })
     }
 

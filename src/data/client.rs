@@ -157,6 +157,8 @@ impl Client {
     ///
     /// Returns an error if the request fails or the API returns an error response.
     pub async fn positions(&self, req: &PositionsRequest) -> Result<Vec<Position>> {
+        crate::check!(self, key: "data_positions", quota: "150/10s");
+
         self.get("positions", req).await
     }
 
@@ -168,6 +170,8 @@ impl Client {
     ///
     /// Returns an error if the request fails or the API returns an error response.
     pub async fn trades(&self, req: &TradesRequest) -> Result<Vec<Trade>> {
+        crate::check!(self, key: "data_trades", quota: "200/10s");
+
         self.get("trades", req).await
     }
 
@@ -216,6 +220,8 @@ impl Client {
         &self,
         req: &ClosedPositionsRequest,
     ) -> Result<Vec<ClosedPosition>> {
+        crate::check!(self, key: "data_closed_positions", quota: "150/10s");
+
         self.get("closed-positions", req).await
     }
 

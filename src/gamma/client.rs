@@ -184,6 +184,8 @@ impl Client {
 
     /// Lists tags with optional filters.
     pub async fn tags(&self, request: &TagsRequest) -> Result<Vec<Tag>> {
+        crate::check!(self, key: "gamma_tags", quota: "200/10s");
+
         self.get("tags", request).await
     }
 
@@ -239,6 +241,8 @@ impl Client {
 
     /// Lists events with optional filters.
     pub async fn events(&self, request: &EventsRequest) -> Result<Vec<Event>> {
+        crate::check!(self, key: "gamma_events", quota: "500/10s");
+
         self.get("events", request).await
     }
 
@@ -261,6 +265,8 @@ impl Client {
 
     /// Lists markets with optional filters.
     pub async fn markets(&self, request: &MarketsRequest) -> Result<Vec<Market>> {
+        crate::check!(self, key: "gamma_markets", quota: "300/10s");
+
         // Build base query string using the standard ToQueryParams trait
         let base_query = request.query_params(None);
 
@@ -311,6 +317,8 @@ impl Client {
 
     /// Lists comments with optional filters.
     pub async fn comments(&self, request: &CommentsRequest) -> Result<Vec<Comment>> {
+        crate::check!(self, key: "gamma_comments", quota: "200/10s");
+
         self.get("comments", request).await
     }
 
@@ -338,6 +346,8 @@ impl Client {
 
     /// Searches markets, events, and profiles.
     pub async fn search(&self, request: &SearchRequest) -> Result<SearchResults> {
+        crate::check!(self, key: "gamma_search", quota: "350/10s");
+
         self.get("public-search", request).await
     }
 }

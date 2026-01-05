@@ -9,7 +9,6 @@ pub mod data;
 pub mod error;
 #[cfg(feature = "gamma")]
 pub mod gamma;
-#[cfg(feature = "rate-limiting")]
 pub mod http;
 #[cfg(feature = "rtds")]
 pub mod rtds;

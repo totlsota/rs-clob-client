@@ -410,6 +410,8 @@ impl<S: State> Client<S> {
     }
 
     pub async fn midpoints(&self, requests: &[MidpointRequest]) -> Result<MidpointsResponse> {
+        crate::check!(self.inner, key: "clob_midpoint", quota: "1500/10s");
+
         let request = self
             .client()
             .request(Method::POST, format!("{}midpoints", self.host()))
@@ -435,6 +437,8 @@ impl<S: State> Client<S> {
     }
 
     pub async fn prices(&self, requests: &[PriceRequest]) -> Result<PricesResponse> {
+        crate::check!(self.inner, key: "clob_price", quota: "1500/10s");
+
         let request = self
             .client()
             .request(Method::POST, format!("{}prices", self.host()))
@@ -1035,6 +1039,8 @@ impl<K: Kind> Client<Authenticated<K>> {
     }
 
     pub async fn post_orders(&self, orders: Vec<SignedOrder>) -> Result<Vec<PostOrderResponse>> {
+        crate::check!(self.inner, key: "clob_post_order", burst: "3500/10s", sustained: "36000/10m");
+
         let request = self
             .client()
             .request(Method::POST, format!("{}orders", self.host()))
@@ -1085,6 +1091,8 @@ impl<K: Kind> Client<Authenticated<K>> {
     }
 
     pub async fn cancel_orders(&self, order_ids: &[&str]) -> Result<CancelOrdersResponse> {
+        crate::check!(self.inner, key: "clob_cancel_order", burst: "3000/10s", sustained: "30000/10m");
+
         let request = self
             .client()
             .request(Method::DELETE, format!("{}orders", self.host()))
@@ -1245,6 +1253,8 @@ impl<K: Kind> Client<Authenticated<K>> {
         date: NaiveDate,
         next_cursor: Option<String>,
     ) -> Result<Page<UserEarningResponse>> {
+        crate::check!(self.inner, key: "clob_earnings", quota: "200/10s");
+
         let cursor = next_cursor.map_or(String::new(), |c| format!("&next_cursor={c}"));
         let request = self
             .client()
@@ -1266,6 +1276,8 @@ impl<K: Kind> Client<Authenticated<K>> {
         &self,
         date: NaiveDate,
     ) -> Result<Vec<TotalUserEarningResponse>> {
+        crate::check!(self.inner, key: "clob_earnings", quota: "200/10s");
+
         let request = self
             .client()
             .request(Method::GET, format!("{}rewards/user/total", self.host()))
@@ -1287,6 +1299,8 @@ impl<K: Kind> Client<Authenticated<K>> {
         request: &UserRewardsEarningRequest,
         next_cursor: Option<String>,
     ) -> Result<Vec<UserRewardsEarningResponse>> {
+        crate::check!(self.inner, key: "clob_earnings", quota: "200/10s");
+
         let params = request.query_params(next_cursor.as_deref());
         let request = self
             .client()
@@ -1305,6 +1319,8 @@ impl<K: Kind> Client<Authenticated<K>> {
     }
 
     pub async fn reward_percentages(&self) -> Result<RewardsPercentagesResponse> {
+        crate::check!(self.inner, key: "clob_earnings", quota: "200/10s");
+
         let request = self
             .client()
             .request(
