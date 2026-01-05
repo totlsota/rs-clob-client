@@ -287,8 +287,8 @@ pub struct PostOrderResponse {
 pub struct ExternalSigningData {
     /// EIP-712 typed data JSON string, ready to be passed to `eth_signTypedData_v4`.
     pub typed_data: String,
-    /// Serialized order data JSON string, to be passed back to [`Client::post_externally_signed_order`]
-    /// along with the signature.
+    /// Opaque order data to pass back to [`Client::post_externally_signed_order`].
+    /// Contains the order parameters and metadata needed to submit the signed order.
     pub order_data: String,
 }
 

@@ -3101,8 +3101,7 @@ mod external_signing {
     }
 
     #[tokio::test]
-    async fn prepare_for_external_signing_should_return_roundtrippable_order_data()
-    -> anyhow::Result<()> {
+    async fn prepare_for_external_signing_should_return_extractable_order() -> anyhow::Result<()> {
         let server = MockServer::start();
         let client = create_authenticated(&server).await?;
 
@@ -3121,19 +3120,10 @@ mod external_signing {
             .prepare_for_external_signing(&signable_order, POLYGON)
             .await?;
 
-        // Verify order_data can be parsed back
-        let order_data: serde_json::Value = serde_json::from_str(&signing_data.order_data)?;
+        // Verify order can be extracted from typed_data.message
+        let typed_data: serde_json::Value = serde_json::from_str(&signing_data.typed_data)?;
+        let order = &typed_data["message"];
 
-        assert!(
-            order_data.get("order").is_some(),
-            "order_data should have 'order'"
-        );
-        assert!(
-            order_data.get("orderType").is_some(),
-            "order_data should have 'orderType'"
-        );
-
-        let order = &order_data["order"];
         assert!(order.get("salt").is_some());
         assert!(order.get("maker").is_some());
         assert!(order.get("signer").is_some());
@@ -3142,6 +3132,10 @@ mod external_signing {
         assert!(order.get("takerAmount").is_some());
         assert!(order.get("side").is_some());
         assert!(order.get("signatureType").is_some());
+
+        // Verify order_data contains orderType
+        let order_data: serde_json::Value = serde_json::from_str(&signing_data.order_data)?;
+        assert_eq!(order_data["orderType"], "GTC");
 
         Ok(())
     }
@@ -3220,7 +3214,7 @@ mod external_signing {
 
         ensure_requirements(&server, TOKEN_1, TickSize::Hundredth);
 
-        // Build an order to get valid order_data
+        // Build an order to get signing_data
         let signable_order = client
             .limit_order()
             .token_id(TOKEN_1)
@@ -3251,9 +3245,9 @@ mod external_signing {
             }]));
         });
 
-        let order_json: serde_json::Value = serde_json::from_str(&signing_data.order_data)?;
         let fake_signature = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1b";
 
+        let order_json: serde_json::Value = serde_json::from_str(&signing_data.order_data)?;
         let response = client
             .post_externally_signed_order(order_json, fake_signature)
             .await?;
@@ -3287,7 +3281,7 @@ mod external_signing {
             .prepare_for_external_signing(&signable_order, POLYGON)
             .await?;
 
-        // Verify the order_data has numeric side (0 for BUY)
+        // Verify the order_data.order has numeric side (0 for BUY)
         let order_data: serde_json::Value = serde_json::from_str(&signing_data.order_data)?;
         assert_eq!(
             order_data["order"]["side"], 0,
@@ -3316,11 +3310,10 @@ mod external_signing {
             }]));
         });
 
-        let order_json: serde_json::Value = serde_json::from_str(&signing_data.order_data)?;
         let fake_signature = "0x1234";
 
         let response = client
-            .post_externally_signed_order(order_json, fake_signature)
+            .post_externally_signed_order(order_data, fake_signature)
             .await?;
 
         assert!(response.success);
@@ -3378,11 +3371,10 @@ mod external_signing {
             }]));
         });
 
-        let order_json: serde_json::Value = serde_json::from_str(&signing_data.order_data)?;
         let fake_signature = "0x1234";
 
         let _response: PostOrderResponse = client
-            .post_externally_signed_order(order_json, fake_signature)
+            .post_externally_signed_order(order_data, fake_signature)
             .await?;
 
         mock.assert();
@@ -3395,13 +3387,13 @@ mod external_signing {
         let server = MockServer::start();
         let client = create_authenticated(&server).await?;
 
-        let invalid_json = json!({
+        let invalid_order_data = json!({
             "orderType": "GTC"
             // missing "order" field
         });
 
         let result = client
-            .post_externally_signed_order(invalid_json, "0x1234")
+            .post_externally_signed_order(invalid_order_data, "0x1234")
             .await;
 
         assert!(result.is_err());
@@ -3419,7 +3411,7 @@ mod external_signing {
         let server = MockServer::start();
         let client = create_authenticated(&server).await?;
 
-        let invalid_json = json!({
+        let invalid_order_data = json!({
             "order": {
                 "side": 99  // invalid side value
             },
@@ -3427,7 +3419,7 @@ mod external_signing {
         });
 
         let result = client
-            .post_externally_signed_order(invalid_json, "0x1234")
+            .post_externally_signed_order(invalid_order_data, "0x1234")
             .await;
 
         assert!(result.is_err());
