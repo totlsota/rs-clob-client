@@ -27,7 +27,7 @@ bridge = []
 tracing = ["dep:tracing", "dep:serde_ignored"]
 ws = ["dep:backoff", "dep:bitflags", "dep:tokio", "dep:tokio-tungstenite"]
 rtds = ["dep:backoff", "dep:tokio", "dep:tokio-tungstenite"]
-rate-limiting = ["dep:governor"]
+rate-limit = ["dep:governor"]
 
 [dependencies]
 alloy = { version = "1.2.1", default-features = false, features = [

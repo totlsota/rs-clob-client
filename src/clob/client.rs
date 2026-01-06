@@ -41,7 +41,7 @@ use crate::clob::types::response::{
 };
 use crate::clob::types::{SignableOrder, SignatureType, SignedOrder, TickSize};
 use crate::error::{Error, Synchronization};
-#[cfg(feature = "rate-limiting")]
+#[cfg(feature = "rate-limit")]
 use crate::rate_limit;
 use crate::types::Address;
 use crate::{AMOY, POLYGON, Result, Timestamp, ToQueryParams as _, auth, contract_config};
@@ -181,7 +181,7 @@ impl<S: Signer, K: Kind> AuthenticationBuilder<'_, S, K> {
                 funder: self.funder,
                 signature_type: self.signature_type.unwrap_or(SignatureType::Eoa),
                 salt_generator: self.salt_generator.unwrap_or(generate_seed),
-                #[cfg(feature = "rate-limiting")]
+                #[cfg(feature = "rate-limit")]
                 rate_limiters: inner.rate_limiters,
             }),
         })
@@ -297,7 +297,7 @@ struct ClientInner<S: State> {
     /// The salt/seed generator for use in creating [`SignableOrder`]s
     salt_generator: fn() -> u64,
     /// Rate limiters for throttling requests
-    #[cfg(feature = "rate-limiting")]
+    #[cfg(feature = "rate-limit")]
     rate_limiters: Arc<rate_limit::RateLimiters>,
 }
 
@@ -864,7 +864,7 @@ impl Client<Unauthenticated> {
                 funder: None,
                 signature_type: SignatureType::Eoa,
                 salt_generator: generate_seed,
-                #[cfg(feature = "rate-limiting")]
+                #[cfg(feature = "rate-limit")]
                 rate_limiters: Arc::new(rate_limit::RateLimiters::new()),
             }),
         })
@@ -936,7 +936,7 @@ impl<K: Kind> Client<Authenticated<K>> {
                 funder: None,
                 signature_type: SignatureType::Eoa,
                 salt_generator: generate_seed,
-                #[cfg(feature = "rate-limiting")]
+                #[cfg(feature = "rate-limit")]
                 rate_limiters: inner.rate_limiters,
             }),
         })
@@ -1477,7 +1477,7 @@ impl Client<Authenticated<Normal>> {
             funder: inner.funder,
             signature_type: inner.signature_type,
             salt_generator: inner.salt_generator,
-            #[cfg(feature = "rate-limiting")]
+            #[cfg(feature = "rate-limit")]
             rate_limiters: inner.rate_limiters,
         };
 

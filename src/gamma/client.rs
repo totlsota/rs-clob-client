@@ -47,7 +47,7 @@ use super::types::response::{
     SportsMarketTypesResponse, SportsMetadata, Tag, Team,
 };
 use crate::error::Error;
-#[cfg(feature = "rate-limiting")]
+#[cfg(feature = "rate-limit")]
 use crate::rate_limit;
 use crate::{Result, ToQueryParams as _};
 
@@ -76,7 +76,7 @@ use crate::{Result, ToQueryParams as _};
 pub struct Client {
     host: Url,
     client: ReqwestClient,
-    #[cfg(feature = "rate-limiting")]
+    #[cfg(feature = "rate-limit")]
     rate_limiters: Arc<rate_limit::RateLimiters>,
 }
 
@@ -93,7 +93,7 @@ impl Client {
     /// # Arguments
     ///
     /// * `host` - The base URL for the Gamma API.
-    /// * `rate_limit_config` - Optional rate limiting configuration. Only available with the `rate-limiting` feature.
+    /// * `rate_limit_config` - Optional rate limiting configuration. Only available with the `rate-limit` feature.
     ///
     /// # Errors
     ///
@@ -110,7 +110,7 @@ impl Client {
         Ok(Self {
             host: Url::parse(host)?,
             client,
-            #[cfg(feature = "rate-limiting")]
+            #[cfg(feature = "rate-limit")]
             rate_limiters: Arc::new(rate_limit::RateLimiters::new()),
         })
     }

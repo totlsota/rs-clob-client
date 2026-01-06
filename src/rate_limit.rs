@@ -28,8 +28,8 @@
 //!
 //! See <https://docs.polymarket.com/quickstart/introduction/rate-limits> for Polymarket's limits.
 
-#[cfg(feature = "rate-limiting")]
-mod implementation {
+#[cfg(feature = "rate-limit")]
+pub(crate) mod implementation {
     use std::num::NonZeroU32;
     use std::sync::Arc;
     use std::time::Duration;
@@ -59,7 +59,10 @@ mod implementation {
     }
 
     /// Specification for an endpoint's rate limits.
-    #[non_exhaustive]
+    #[expect(
+        clippy::exhaustive_structs,
+        reason = "The macro creates these manually, and since the macro runs in test (public) code we have to ignore this."
+    )]
     #[derive(Clone, Debug)]
     pub struct Spec {
         /// Unique key for this endpoint
@@ -70,23 +73,26 @@ mod implementation {
         pub api_quota: Option<GovernorQuota>,
     }
 
-    /// Parses a quota string literal like "1500/10s" into (count, period).
-    ///
-    /// Used by the `check!` macro to parse quota strings.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the format is invalid.
-    #[must_use]
-    pub fn parse_quota_literal(quota: &str) -> (u32, &str) {
-        let (count, period) = quota
-            .split_once('/')
-            .expect("Invalid quota format: expected 'count/period' (e.g., '1500/10s')");
+    impl Spec {
+        /// Creates a new spec with the given key and quota.
+        #[must_use]
+        pub fn new(key: &'static str, quota: Quota) -> Self {
+            Self {
+                key,
+                quota,
+                api_quota: None,
+            }
+        }
 
-        (
-            count.parse().expect("Count must be convertible to u32"),
-            period,
-        )
+        /// Creates a new spec with the given key, quota, and API quota.
+        #[must_use]
+        pub fn with_api_quota(key: &'static str, quota: Quota, api_quota: GovernorQuota) -> Self {
+            Self {
+                key,
+                quota,
+                api_quota: Some(api_quota),
+            }
+        }
     }
 
     /// Parses a quota from count and period string.
@@ -97,7 +103,13 @@ mod implementation {
     ///
     /// Panics if the period format is invalid.
     #[must_use]
-    pub fn parse_quota(count: u32, period: &str) -> GovernorQuota {
+    pub fn parse_quota(quota: &str) -> GovernorQuota {
+        let (count, period) = quota
+            .split_once('/')
+            .expect("Invalid quota format: expected 'count/period' (e.g., '1500/10s')");
+
+        let count = count.parse().expect("Count must be convertible to u32");
+
         let duration = match period {
             "1s" => Duration::from_secs(1),
             "10s" => Duration::from_secs(10),
@@ -128,7 +140,8 @@ mod implementation {
         }
 
         /// Gets or creates a rate limiter for the given key and quota.
-        fn get_or_create_limiter(&self, key: &str, quota: GovernorQuota) -> Limiter {
+        #[must_use]
+        pub fn get_or_create_limiter(&self, key: &str, quota: GovernorQuota) -> Limiter {
             self.limiters
                 .entry(key.to_owned())
                 .or_insert_with(|| Arc::new(RateLimiter::direct(quota)))
@@ -143,12 +156,10 @@ mod implementation {
         /// # Errors
         ///
         /// Returns Ok after waiting for quota to be available.
-        pub async fn check_api_limit(&self, api: &str, quota: GovernorQuota) -> crate::Result<()> {
+        pub async fn check_api_limit(&self, api: &str, quota: GovernorQuota) {
             let api_key = format!("{api}_api");
             let limiter = self.get_or_create_limiter(&api_key, quota);
             limiter.until_ready().await;
-
-            Ok(())
         }
 
         /// Checks rate limits for a specification, waiting if necessary.
@@ -161,7 +172,7 @@ mod implementation {
         /// # Errors
         ///
         /// Currently, always returns Ok after waiting. Future versions may support fail-fast.
-        pub async fn check_spec(&self, spec: &Spec) -> crate::Result<()> {
+        pub async fn check_spec(&self, spec: &Spec) {
             let endpoint_fut = async move {
                 match &spec.quota {
                     Quota::Single(quota) => {
@@ -203,18 +214,16 @@ mod implementation {
             };
 
             join!(endpoint_fut, api_fut);
-
-            Ok(())
         }
     }
 }
 
-#[cfg(feature = "rate-limiting")]
+#[cfg(feature = "rate-limit")]
 pub use implementation::*;
 
 /// Macro to check rate limits at the start of a method.
 ///
-/// This macro is only active when the `rate-limiting` feature is enabled.
+/// This macro is only active when the `rate-limit` feature is enabled.
 /// When disabled, it compiles to nothing (zero overhead).
 ///
 /// # Global Only
@@ -251,34 +260,28 @@ pub use implementation::*;
 ///     api_quota: "9000/10s",
 /// );
 /// ```
+// TODO: introduce stacked rate limiters to better match docs
 #[macro_export]
 macro_rules! check {
     // API-only rate limiting
     ($self:expr, api_only: $api:expr, quota: $quota:expr) => {{
-        #[cfg(feature = "rate-limiting")]
+        #[cfg(feature = "rate-limit")]
         {
             let limiters = &$self.rate_limiters;
-            let (count, period) = $crate::rate_limit::parse_quota_literal($quota);
-            let api_quota = $crate::rate_limit::parse_quota(count, period);
-            limiters.check_api_limit($api, api_quota).await?;
+            let api_quota = $crate::rate_limit::parse_quota($quota);
+            limiters.check_api_limit($api, api_quota).await;
         }
     }};
 
     // Single quota with optional API quota
     ($self:expr, key: $key:expr, quota: $quota:expr $(, api_quota: $api_quota:expr)? ) => {{
-        #[cfg(feature = "rate-limiting")]
+        #[cfg(feature = "rate-limit")]
         {
             let limiters = &$self.rate_limiters;
-            let (count, period) = $crate::rate_limit::parse_quota_literal($quota);
-            let quota = $crate::rate_limit::parse_quota(count, period);
+            let quota = $crate::rate_limit::parse_quota($quota);
 
-            $(let api_quota = {
-                let (count, period) = $crate::rate_limit::parse_quota_literal($api_quota);
-                Some($crate::rate_limit::parse_quota(count, period))
-            };)?
             let api_quota = None $( .or(Some({
-                let (count, period) = $crate::rate_limit::parse_quota_literal($api_quota);
-                $crate::rate_limit::parse_quota(count, period)
+                $crate::rate_limit::parse_quota($api_quota)
             })) )?;
 
             let spec = $crate::rate_limit::Spec {
@@ -286,28 +289,20 @@ macro_rules! check {
                 quota: $crate::rate_limit::Quota::Single(quota),
                 api_quota,
             };
-            limiters.check_spec(&spec).await?;
+            limiters.check_spec(&spec).await;
         }
     }};
 
     // Multi-window quota (burst + sustained)
     ($self:expr, key: $key:expr, burst: $burst:expr, sustained: $sustained:expr $(, api_quota: $api_quota:expr)? ) => {{
-        #[cfg(feature = "rate-limiting")]
+        #[cfg(feature = "rate-limit")]
         {
             let limiters = &$self.rate_limiters;
-            let (burst_count, burst_period) = $crate::rate_limit::parse_quota_literal($burst);
-            let burst_quota = $crate::rate_limit::parse_quota(burst_count, burst_period);
+            let burst_quota = $crate::rate_limit::parse_quota($burst);
+            let sustained_quota = $crate::rate_limit::parse_quota($sustained);
 
-            let (sustained_count, sustained_period) = $crate::rate_limit::parse_quota_literal($sustained);
-            let sustained_quota = $crate::rate_limit::parse_quota(sustained_count, sustained_period);
-
-            $(let api_quota = {
-                let (count, period) = $crate::rate_limit::parse_quota_literal($api_quota);
-                Some($crate::rate_limit::parse_quota(count, period))
-            };)?
             let api_quota = None $( .or(Some({
-                let (count, period) = $crate::rate_limit::parse_quota_literal($api_quota);
-                $crate::rate_limit::parse_quota(count, period)
+                $crate::rate_limit::parse_quota($api_quota)
             })) )?;
 
             let spec = $crate::rate_limit::Spec {
@@ -318,60 +313,27 @@ macro_rules! check {
                 },
                 api_quota,
             };
-            limiters.check_spec(&spec).await?;
+            limiters.check_spec(&spec).await;
         }
     }};
 }
 
-// Re-export at crate level for easier access
-pub use check;
-
-#[cfg(all(test, feature = "rate-limiting"))]
+#[cfg(all(test, feature = "rate-limit"))]
 mod tests {
     use std::sync::Arc;
 
-    use super::*;
+    use crate::rate_limit::implementation::{RateLimiters, parse_quota};
 
     #[test]
     fn parse_quota_str_works() {
-        let q = parse_quota(100, "10s");
+        let q = parse_quota("100/10s");
         assert_eq!(q.burst_size().get(), 100);
 
-        let q = parse_quota(60, "1m");
+        let q = parse_quota("60/1m");
         assert_eq!(q.burst_size().get(), 60);
 
-        let q = parse_quota(1000, "10m");
+        let q = parse_quota("1000/10m");
         assert_eq!(q.burst_size().get(), 1000);
-    }
-
-    #[tokio::test]
-    async fn rate_limiting_check_spec_works() {
-        let limiters = RateLimiters::new();
-        let spec = Spec {
-            key: "test",
-            quota: Quota::Single(parse_quota(1000, "10s")),
-            api_quota: None,
-        };
-
-        // Should not error
-        let result = limiters.check_spec(&spec).await;
-        result.unwrap();
-    }
-
-    #[tokio::test]
-    async fn multi_window_quota_works() {
-        let limiters = RateLimiters::new();
-        let spec = Spec {
-            key: "test_multi",
-            quota: Quota::MultiWindow {
-                burst: parse_quota(100, "10s"),
-                sustained: parse_quota(1000, "10m"),
-            },
-            api_quota: None,
-        };
-
-        let result = limiters.check_spec(&spec).await;
-        result.unwrap();
     }
 
     #[tokio::test]
@@ -395,8 +357,8 @@ mod tests {
         // Test direct method call
         client
             .rate_limiters
-            .check_api_limit("data", parse_quota(1000, "10s"))
-            .await?;
+            .check_api_limit("data", parse_quota("1000/10s"))
+            .await;
 
         Ok(())
     }

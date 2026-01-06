@@ -43,7 +43,7 @@ use super::types::response::{
     Activity, BuilderLeaderboardEntry, BuilderVolumeEntry, ClosedPosition, Health, LiveVolume,
     MetaHolder, OpenInterest, Position, Trade, Traded, TraderLeaderboardEntry, Value,
 };
-#[cfg(feature = "rate-limiting")]
+#[cfg(feature = "rate-limit")]
 use crate::rate_limit;
 use crate::{Result, ToQueryParams as _};
 
@@ -72,7 +72,7 @@ use crate::{Result, ToQueryParams as _};
 pub struct Client {
     host: Url,
     client: ReqwestClient,
-    #[cfg(feature = "rate-limiting")]
+    #[cfg(feature = "rate-limit")]
     rate_limiters: Arc<rate_limit::RateLimiters>,
 }
 
@@ -89,7 +89,7 @@ impl Client {
     /// # Arguments
     ///
     /// * `host` - The base URL for the Data API (e.g., `https://data-api.polymarket.com`).
-    /// * `rate_limit_config` - Optional rate limiting configuration. Only available with the `rate-limiting` feature.
+    /// * `rate_limit_config` - Optional rate limiting configuration. Only available with the `rate-limit` feature.
     ///
     /// # Errors
     ///
@@ -106,7 +106,7 @@ impl Client {
         Ok(Self {
             host: Url::parse(host)?,
             client,
-            #[cfg(feature = "rate-limiting")]
+            #[cfg(feature = "rate-limit")]
             rate_limiters: Arc::new(rate_limit::RateLimiters::new()),
         })
     }
