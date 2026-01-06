@@ -94,7 +94,7 @@ mod request {
 
         let mock = server.mock(|when, then| {
             when.method(httpmock::Method::GET)
-                .path("/rfq/request")
+                .path("/rfq/data/requests")
                 .header_exists(POLY_ADDRESS);
             then.status(StatusCode::OK).json_body(json!({
                 "data": [{
@@ -137,7 +137,7 @@ mod request {
 
         let mock = server.mock(|when, then| {
             when.method(httpmock::Method::GET)
-                .path("/rfq/request")
+                .path("/rfq/data/requests")
                 .query_param("next_cursor", "abc123")
                 .header_exists(POLY_ADDRESS);
             then.status(StatusCode::OK).json_body(json!({
@@ -232,7 +232,7 @@ mod quote {
 
         let mock = server.mock(|when, then| {
             when.method(httpmock::Method::GET)
-                .path("/rfq/quote")
+                .path("/rfq/data/quotes")
                 .header_exists(POLY_ADDRESS);
             then.status(StatusCode::OK).json_body(json!({
                 "data": [{

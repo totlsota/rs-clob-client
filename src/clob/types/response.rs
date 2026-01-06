@@ -721,10 +721,19 @@ pub struct RfqRequest {
     /// Unique request identifier.
     pub request_id: String,
     /// User's address.
+    ///
+    /// Some deployments return this as `userAddress`.
+    #[serde(alias = "userAddress")]
     pub user: Address,
     /// Proxy address (may be same as user).
+    ///
+    /// Some deployments return this as `proxyAddress`.
+    #[serde(alias = "proxyAddress")]
     pub proxy: Address,
     /// Market condition ID.
+    ///
+    /// Some deployments return this as `condition`.
+    #[serde(alias = "condition")]
     pub market: String,
     /// Token ID for the outcome token.
     pub token: String,
@@ -754,10 +763,19 @@ pub struct RfqQuote {
     /// Request ID this quote is for.
     pub request_id: String,
     /// Quoter's address.
+    ///
+    /// Some deployments return this as `userAddress`.
+    #[serde(alias = "userAddress")]
     pub user: Address,
     /// Proxy address (may be same as user).
+    ///
+    /// Some deployments return this as `proxyAddress`.
+    #[serde(alias = "proxyAddress")]
     pub proxy: Address,
     /// Market condition ID.
+    ///
+    /// Some deployments return this as `condition`.
+    #[serde(alias = "condition")]
     pub market: String,
     /// Token ID for the outcome token.
     pub token: String,

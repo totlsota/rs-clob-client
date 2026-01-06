@@ -1544,7 +1544,7 @@ impl<K: Kind> Client<Authenticated<K>> {
         let params = request.query_params(next_cursor);
         let http_request = self
             .client()
-            .request(Method::GET, format!("{}rfq/request{params}", self.host()))
+            .request(Method::GET, format!("{}rfq/data/requests{params}", self.host()))
             .build()?;
         let headers = self.create_headers(&http_request).await?;
 
@@ -1605,7 +1605,7 @@ impl<K: Kind> Client<Authenticated<K>> {
         let params = request.query_params(next_cursor);
         let http_request = self
             .client()
-            .request(Method::GET, format!("{}rfq/quote{params}", self.host()))
+            .request(Method::GET, format!("{}rfq/data/quotes{params}", self.host()))
             .build()?;
         let headers = self.create_headers(&http_request).await?;
 
