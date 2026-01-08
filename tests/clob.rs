@@ -3162,9 +3162,7 @@ mod external_signing {
         // Verify signatureType is present
         assert!(message.get("signatureType").is_some());
 
-        // Verify order and order_type are returned separately
-        assert_eq!(signing_data.order.tokenId.to_string(), TOKEN_1);
-        assert_eq!(signing_data.order.side, 0); // BUY
+        // Verify order_type is returned (order is in typed_data.message)
         assert_eq!(
             signing_data.order_type,
             polymarket_client_sdk::clob::types::OrderType::GTC
@@ -3281,7 +3279,7 @@ mod external_signing {
 
         let response = client
             .post_externally_signed_order(
-                signing_data.order,
+                signing_data.typed_data.message.clone(),
                 signing_data.order_type,
                 fake_signature,
             )
@@ -3316,10 +3314,10 @@ mod external_signing {
             .prepare_for_external_signing(&signable_order, POLYGON)
             .await?;
 
-        // Verify the order has numeric side (0 for BUY)
+        // Verify the message has numeric side (0 for BUY)
         assert_eq!(
-            signing_data.order.side, 0,
-            "order should have numeric side 0 for BUY"
+            signing_data.typed_data.message["side"], 0,
+            "message should have numeric side 0 for BUY"
         );
 
         // Mock verifies the request body contains string "BUY" (not numeric 0)
@@ -3348,7 +3346,7 @@ mod external_signing {
 
         let response = client
             .post_externally_signed_order(
-                signing_data.order,
+                signing_data.typed_data.message.clone(),
                 signing_data.order_type,
                 fake_signature,
             )
@@ -3381,10 +3379,10 @@ mod external_signing {
             .prepare_for_external_signing(&signable_order, POLYGON)
             .await?;
 
-        // Verify the order has numeric side (1 for SELL)
+        // Verify the message has numeric side (1 for SELL)
         assert_eq!(
-            signing_data.order.side, 1,
-            "order should have numeric side 1 for SELL"
+            signing_data.typed_data.message["side"], 1,
+            "message should have numeric side 1 for SELL"
         );
 
         // Mock verifies the request body contains string "SELL" (not numeric 1)
@@ -3413,7 +3411,7 @@ mod external_signing {
 
         let response = client
             .post_externally_signed_order(
-                signing_data.order,
+                signing_data.typed_data.message.clone(),
                 signing_data.order_type,
                 fake_signature,
             )
@@ -3472,7 +3470,7 @@ mod external_signing {
 
         let _response: PostOrderResponse = client
             .post_externally_signed_order(
-                signing_data.order,
+                signing_data.typed_data.message.clone(),
                 signing_data.order_type,
                 fake_signature,
             )
@@ -3482,9 +3480,6 @@ mod external_signing {
 
         Ok(())
     }
-
-    // Note: Tests for missing order field and invalid side are no longer needed
-    // since the API now takes typed Order and OrderType parameters
 
     #[tokio::test]
     async fn external_signing_roundtrip_should_succeed() -> anyhow::Result<()> {
@@ -3555,7 +3550,7 @@ mod external_signing {
 
         let response = client
             .post_externally_signed_order(
-                signing_data.order,
+                signing_data.typed_data.message.clone(),
                 signing_data.order_type,
                 &signature_hex,
             )

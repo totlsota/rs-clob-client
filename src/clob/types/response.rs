@@ -14,7 +14,7 @@ use sha2::{Digest as _, Sha256};
 
 use crate::Result;
 use crate::auth::ApiKey;
-use crate::clob::types::{Order, OrderStatusType, OrderType, Side, TickSize, TraderSide};
+use crate::clob::types::{OrderStatusType, OrderType, Side, TickSize, TraderSide};
 use crate::serde_helpers::StringFromAny;
 use crate::types::{Address, Decimal};
 
@@ -283,14 +283,15 @@ pub struct PostOrderResponse {
 ///
 /// This is returned by [`Client::prepare_for_external_signing`] and contains everything
 /// needed for a browser wallet to sign an order via `eth_signTypedData_v4`.
+///
+/// The order itself is contained in `typed_data.message` as a `serde_json::Value`.
 #[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct ExternalSigningData {
     /// EIP-712 typed data for signing. Serialize this to JSON for `eth_signTypedData_v4`.
+    /// The order is available in the `message` field.
     pub typed_data: TypedData,
-    /// The order to be signed and submitted.
-    pub order: Order,
-    /// The order type (GTC, FOK, etc.).
+    /// The order type (GTC, FOK, etc.). Not part of the signed data.
     pub order_type: OrderType,
 }
 

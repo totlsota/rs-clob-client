@@ -38,9 +38,7 @@ use crate::clob::types::response::{
     SpreadsResponse, TickSizeResponse, TotalUserEarningResponse, TradeResponse,
     UserEarningResponse, UserRewardsEarningResponse,
 };
-use crate::clob::types::{
-    Order, OrderType, Side, SignableOrder, SignatureType, SignedOrder, TickSize,
-};
+use crate::clob::types::{OrderType, Side, SignableOrder, SignatureType, SignedOrder, TickSize};
 use crate::error::{Error, Synchronization};
 use crate::types::Address;
 use crate::{AMOY, POLYGON, Result, Timestamp, ToQueryParams as _, auth, contract_config};
@@ -996,8 +994,8 @@ impl<K: Kind> Client<Authenticated<K>> {
     /// Prepares a [`SignableOrder`] for external signing by a browser wallet.
     ///
     /// This method returns the EIP-712 typed data that can be serialized to JSON and passed
-    /// to `eth_signTypedData_v4` in a browser wallet, along with the typed order data
-    /// needed to submit the signed order via [`Self::post_externally_signed_order`].
+    /// to `eth_signTypedData_v4` in a browser wallet. The order is contained in
+    /// `typed_data.message` and the `order_type` is returned separately (not part of signature).
     ///
     /// # Arguments
     ///
@@ -1023,10 +1021,10 @@ impl<K: Kind> Client<Authenticated<K>> {
     /// let typed_data_json = serde_json::to_string(&signing_data.typed_data)?;
     /// // Send to browser for wallet signing, browser returns signature
     ///
-    /// // Submit the signed order
+    /// // Submit the signed order (order is in typed_data.message)
     /// let response = client
     ///     .post_externally_signed_order(
-    ///         signing_data.order,
+    ///         signing_data.typed_data.message,
     ///         signing_data.order_type,
     ///         &signature,
     ///     )
@@ -1056,7 +1054,6 @@ impl<K: Kind> Client<Authenticated<K>> {
 
         Ok(ExternalSigningData {
             typed_data,
-            order: signable.order.clone(),
             order_type: signable.order_type,
         })
     }
@@ -1086,12 +1083,12 @@ impl<K: Kind> Client<Authenticated<K>> {
     /// Posts an order that was signed externally (e.g., by a browser wallet).
     ///
     /// This method is useful for applications where orders are built server-side but signed
-    /// by the user's wallet in a browser context. Use the `order` and `order_type` from
-    /// [`ExternalSigningData`] along with the signature from the wallet.
+    /// by the user's wallet in a browser context. Use `typed_data.message` and `order_type`
+    /// from [`ExternalSigningData`] along with the signature from the wallet.
     ///
     /// # Arguments
     ///
-    /// * `order` - The [`Order`] from [`ExternalSigningData`]
+    /// * `order` - The order as `serde_json::Value` (from `ExternalSigningData.typed_data.message`)
     /// * `order_type` - The [`OrderType`] from [`ExternalSigningData`]
     /// * `signature` - The wallet signature (hex string, e.g., "0x...")
     ///
@@ -1105,7 +1102,7 @@ impl<K: Kind> Client<Authenticated<K>> {
     /// // Server submits:
     /// let response = client
     ///     .post_externally_signed_order(
-    ///         signing_data.order,
+    ///         signing_data.typed_data.message,
     ///         signing_data.order_type,
     ///         "0x...",
     ///     )
@@ -1113,13 +1110,11 @@ impl<K: Kind> Client<Authenticated<K>> {
     /// ```
     pub async fn post_externally_signed_order(
         &self,
-        order: Order,
+        order: serde_json::Value,
         order_type: OrderType,
         signature: &str,
     ) -> Result<PostOrderResponse> {
-        // Serialize the order to JSON and inject signature + convert side
-        let mut order_json = serde_json::to_value(&order)
-            .map_err(|e| Error::validation(format!("Failed to serialize order: {e}")))?;
+        let mut order_json = order;
 
         if let Some(map) = order_json.as_object_mut() {
             // Inject signature
@@ -1128,12 +1123,15 @@ impl<K: Kind> Client<Authenticated<K>> {
                 serde_json::Value::String(signature.to_owned()),
             );
 
-            // Convert numeric side to string (CLOB expects "BUY"/"SELL")
-            let side = Side::try_from(order.side)?;
-            map.insert(
-                "side".to_owned(),
-                serde_json::Value::String(side.to_string()),
-            );
+            // Convert numeric side to string if needed (CLOB expects "BUY"/"SELL")
+            if let Some(side_value) = map.get_mut("side")
+                && let Some(side_num) = side_value.as_u64()
+            {
+                let side_u8 = u8::try_from(side_num)
+                    .map_err(|e| Error::validation(format!("invalid side value: {e}")))?;
+                let side = Side::try_from(side_u8)?;
+                *side_value = serde_json::Value::String(side.to_string());
+            }
         }
 
         // Build the order payload
