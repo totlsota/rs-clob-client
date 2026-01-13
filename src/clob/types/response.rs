@@ -17,10 +17,9 @@ use uuid::Uuid;
 
 use crate::Result;
 use crate::auth::ApiKey;
-use crate::clob::types::{
-    OrderStatusType, OrderType, RfqMatchType, RfqQuoteState, RfqRequestState, Side, TickSize,
-    TraderSide,
-};
+use crate::clob::types::{OrderStatusType, OrderType, Side, TickSize, TraderSide};
+#[cfg(feature = "rfq")]
+use crate::clob::types::{RfqMatchType, RfqQuoteState, RfqRequestState};
 use crate::serde_helpers::StringFromAny;
 use crate::types::{Address, B256, Decimal, U256};
 
