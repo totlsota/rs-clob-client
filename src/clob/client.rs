@@ -2236,6 +2236,24 @@ impl Client<Authenticated<Builder>> {
 
 #[cfg(feature = "rfq")]
 impl<K: Kind> Client<Authenticated<K>> {
+    /// Fetches the RFQ configuration.
+    ///
+    /// This endpoint is not currently modeled as a typed struct in the SDK, so this method
+    /// returns a `serde_json::Value`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the HTTP request fails or the response cannot be parsed.
+    pub async fn rfq_config(&self) -> Result<serde_json::Value> {
+        let http_request = self
+            .client()
+            .request(Method::GET, format!("{}rfq/config", self.host()))
+            .build()?;
+        let headers = self.create_headers(&http_request).await?;
+
+        crate::request(&self.inner.client, http_request, Some(headers)).await
+    }
+
     /// Creates an RFQ Request to buy or sell outcome tokens.
     ///
     /// This initiates the RFQ flow where market makers can provide quotes.

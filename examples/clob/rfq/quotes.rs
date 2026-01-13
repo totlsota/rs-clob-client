@@ -81,21 +81,39 @@ async fn main() -> anyhow::Result<()> {
         .sort_dir(RfqSortDir::Asc)
         .build();
 
-    // Quoter view: quotes created by the authenticated user.
-    // For requester view (quotes on your own requests), use `client.requester_quotes(...)`.
-    match client.quoter_quotes(&request, None).await {
+    // Like the TS `getQuotes` example, we call *both* quote endpoints and explain the difference:
+    //
+    // - requester_quotes: quotes that other people made on RFQ requests you created
+    // - quoter_quotes: quotes you made on other people's RFQ requests
+
+    match client.requester_quotes(&request, None).await {
         Ok(quotes) => {
             info!(
-                endpoint = "quotes",
+                endpoint = "requester_quotes",
                 count = quotes.count,
                 data_len = quotes.data.len(),
                 next_cursor = %quotes.next_cursor
             );
             for quote in &quotes.data {
-                debug!(endpoint = "quotes", quote = ?quote);
+                debug!(endpoint = "requester_quotes", quote = ?quote);
             }
         }
-        Err(e) => error!(endpoint = "quotes", error = %e),
+        Err(e) => error!(endpoint = "requester_quotes", error = %e),
+    }
+
+    match client.quoter_quotes(&request, None).await {
+        Ok(quotes) => {
+            info!(
+                endpoint = "quoter_quotes",
+                count = quotes.count,
+                data_len = quotes.data.len(),
+                next_cursor = %quotes.next_cursor
+            );
+            for quote in &quotes.data {
+                debug!(endpoint = "quoter_quotes", quote = ?quote);
+            }
+        }
+        Err(e) => error!(endpoint = "quoter_quotes", error = %e),
     }
 
     Ok(())
