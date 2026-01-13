@@ -16,6 +16,10 @@
 //! ```
 //!
 //! Requires `POLY_PRIVATE_KEY` environment variable to be set.
+//!
+//! Optional environment variables:
+//! - `HOST` (default: <https://clob.polymarket.com>)
+//! - `POLY_CHAIN_ID` (default: 137)
 
 #![cfg(feature = "rfq")]
 
@@ -51,14 +55,9 @@ async fn main() -> anyhow::Result<()> {
     let private_key = std::env::var(PRIVATE_KEY_VAR).expect("Need POLY_PRIVATE_KEY");
     let signer = LocalSigner::from_str(&private_key)?;
 
-    let host = std::env::var("POLYMARKET_CLOB_HOST")
-        .or_else(|_| std::env::var("CLOB_API_URL"))
-        .or_else(|_| std::env::var("HOST"))
-        .unwrap_or_else(|_| "https://clob.polymarket.com".to_owned());
+    let host = std::env::var("HOST").unwrap_or_else(|_| "https://clob.polymarket.com".to_owned());
 
-    // Default: Polygon mainnet (137), like TS client default-to-prod behavior
-    let chain_id = std::env::var("POLYMARKET_CHAIN_ID")
-        .or_else(|_| std::env::var("CHAIN_ID"))
+    let chain_id = std::env::var("POLY_CHAIN_ID")
         .ok()
         .and_then(|s| s.parse::<u64>().ok())
         .unwrap_or(POLYGON);

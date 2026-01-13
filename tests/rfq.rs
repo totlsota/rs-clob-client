@@ -292,6 +292,7 @@ mod execution {
         let client = create_authenticated(&server).await?;
 
         let maker: Address = "0x6e0c80c90ea6c15917308f820eac91ce2724b5b5".parse()?;
+        let maker_str = maker.to_string().to_lowercase();
 
         let mock = server.mock(|when, then| {
             when.method(httpmock::Method::POST)
@@ -303,8 +304,8 @@ mod execution {
                     "makerAmount": "50000000",
                     "takerAmount": "3000000",
                     "tokenId": token_1().to_string(),
-                    "maker": maker.to_string(),
-                    "signer": maker.to_string(),
+                    "maker": maker_str,
+                    "signer": maker_str,
                     "taker": "0x0000000000000000000000000000000000000000",
                     "nonce": "0",
                     "expiration": 0,
@@ -349,6 +350,7 @@ mod execution {
         let client = create_authenticated(&server).await?;
 
         let maker: Address = "0x6e0c80c90ea6c15917308f820eac91ce2724b5b5".parse()?;
+        let maker_str = maker.to_string().to_lowercase();
 
         let mock = server.mock(|when, then| {
             when.method(httpmock::Method::POST)
@@ -360,8 +362,8 @@ mod execution {
                     "makerAmount": "50000000",
                     "takerAmount": "3000000",
                     "tokenId": token_1().to_string(),
-                    "maker": maker.to_string(),
-                    "signer": maker.to_string(),
+                    "maker": maker_str,
+                    "signer": maker_str,
                     "taker": "0x0000000000000000000000000000000000000000",
                     "nonce": "0",
                     "expiration": 0,
