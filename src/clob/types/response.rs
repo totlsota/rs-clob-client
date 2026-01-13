@@ -17,7 +17,10 @@ use uuid::Uuid;
 
 use crate::Result;
 use crate::auth::ApiKey;
-use crate::clob::types::{OrderStatusType, OrderType, Side, TickSize, TraderSide};
+use crate::clob::types::{
+    OrderStatusType, OrderType, RfqMatchType, RfqQuoteState, RfqRequestState, Side, TickSize,
+    TraderSide,
+};
 use crate::serde_helpers::StringFromAny;
 use crate::types::{Address, B256, Decimal, U256};
 
@@ -774,8 +777,16 @@ pub struct RfqRequest {
     pub size_out: Decimal,
     /// Price for the request.
     pub price: Decimal,
+    /// Accepted quote ID for this request (present when a quote has been accepted).
+    pub accepted_quote_id: Option<String>,
+    /// Current request state in the RFQ lifecycle.
+    pub state: RfqRequestState,
     /// Unix timestamp when the request expires.
     pub expiry: i64,
+    /// RFC3339 timestamp when the request was created.
+    pub created_at: Option<DateTime<Utc>>,
+    /// RFC3339 timestamp when the request was last updated.
+    pub updated_at: Option<DateTime<Utc>>,
 }
 
 /// An RFQ quote in the system.
@@ -807,4 +818,13 @@ pub struct RfqQuote {
     pub size_out: Decimal,
     /// Quoted price.
     pub price: Decimal,
+    /// Quote match type (how it matches against the request).
+    #[serde(rename = "matchType")]
+    pub match_type: RfqMatchType,
+    /// Current quote state in the RFQ lifecycle.
+    pub state: RfqQuoteState,
+    /// RFC3339 timestamp when the quote was created.
+    pub created_at: Option<DateTime<Utc>>,
+    /// RFC3339 timestamp when the quote was last updated.
+    pub updated_at: Option<DateTime<Utc>>,
 }

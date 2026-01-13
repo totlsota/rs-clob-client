@@ -15,7 +15,7 @@
 //! LOG_FILE=rfq_requests.log RUST_LOG=info,hyper_util=off,hyper=off,reqwest=off,h2=off,rustls=off cargo run --example rfq_requests --features clob,rfq,tracing
 //! ```
 //!
-//! Requires `POLY_PRIVATE_KEY` environment variable to be set.
+//! Requires `POLYMARKET_PRIVATE_KEY` environment variable to be set.
 
 #![cfg(feature = "rfq")]
 
@@ -48,11 +48,29 @@ async fn main() -> anyhow::Result<()> {
         tracing_subscriber::fmt::init();
     }
 
-    let private_key = std::env::var(PRIVATE_KEY_VAR).expect("Need POLY_PRIVATE_KEY");
-    let signer = LocalSigner::from_str(&private_key)?.with_chain_id(Some(POLYGON));
+    let private_key = std::env::var(PRIVATE_KEY_VAR).expect("Need POLYMARKET_PRIVATE_KEY");
+    let signer = LocalSigner::from_str(&private_key)?;
 
-    let client = Client::new("https://clob.polymarket.com", Config::default())?
+    let host = std::env::var("POLYMARKET_CLOB_HOST")
+        .or_else(|_| std::env::var("CLOB_API_URL"))
+        .or_else(|_| std::env::var("HOST"))
+        .unwrap_or_else(|_| "https://clob.polymarket.com".to_owned());
+
+    // Default: Polygon mainnet (137), like TS client default-to-prod behavior
+    let chain_id = std::env::var("POLYMARKET_CHAIN_ID")
+        .or_else(|_| std::env::var("CHAIN_ID"))
+        .ok()
+        .and_then(|s| s.parse::<u64>().ok())
+        .unwrap_or(POLYGON);
+
+    let signer = signer.with_chain_id(Some(chain_id));
+
+    // EOA signature type (default):
+    let client = Client::new(&host, Config::default())?
         .authentication_builder(&signer)
+        // For proxy / safe wallets:
+        // .signature_type(polymarket_client_sdk::clob::types::SignatureType::Proxy)
+        // .signature_type(polymarket_client_sdk::clob::types::SignatureType::GnosisSafe)
         .authenticate()
         .await?;
 
