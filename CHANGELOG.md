@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2](https://github.com/Polymarket/rs-clob-client/compare/v0.4.1...v0.4.2) - 2026-01-15
+
+### Added
+
+- *(rtds)* add unsubscribe support with reference counting ([#192](https://github.com/Polymarket/rs-clob-client/pull/192))
+- *(Bridge)* add status endpoint ([#198](https://github.com/Polymarket/rs-clob-client/pull/198))
+- *(ws)* add TickSizeChange typed stream + unsubscribe ([#195](https://github.com/Polymarket/rs-clob-client/pull/195))
+
+### Fixed
+
+- *(clob)* propagate non-HTTP errors in create_or_derive_api_key ([#193](https://github.com/Polymarket/rs-clob-client/pull/193))
+- *(ws)* add alias for matchtime field deserialization ([#196](https://github.com/Polymarket/rs-clob-client/pull/196))
+
+### Other
+
+- *(ws)* use `rustls` instead of `native-tls` ([#194](https://github.com/Polymarket/rs-clob-client/pull/194))
+
 ## [0.4.1](https://github.com/Polymarket/rs-clob-client/compare/v0.4.0...v0.4.1) - 2026-01-14
 
 ### Added
