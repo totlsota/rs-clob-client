@@ -1190,7 +1190,12 @@ impl Client<Unauthenticated> {
         headers.insert("Connection", HeaderValue::from_static("keep-alive"));
         headers.insert("Content-Type", HeaderValue::from_static("application/json"));
 
-        let client = ReqwestClient::builder().default_headers(headers).build()?;
+        let client = ReqwestClient::builder()
+            .tcp_nodelay(true) // Disable Nagle's algorithm
+            .tcp_keepalive(Some(Duration::from_secs(30))) // Aggressive keepalive
+            .pool_idle_timeout(Some(Duration::from_secs(90)))
+            .default_headers(headers)
+            .build()?;
 
         let geoblock_host = Url::parse(
             config
